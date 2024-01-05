@@ -12,8 +12,6 @@ public class ClientHandler {
     private DataInputStream in;
     private String username;
 
-    private static int clientsCount = 0;
-
     public String getUsername() {
         return username;
     }
@@ -23,8 +21,8 @@ public class ClientHandler {
         this.socket = socket;
         this.in = new DataInputStream(socket.getInputStream());
         this.out = new DataOutputStream(socket.getOutputStream());
-        clientsCount++;
-        this.username = "user" + clientsCount;
+        out.writeUTF("Введите свое имя");
+        this.username = in.readUTF();
         new Thread(() -> {
             try {
                 while (true) {
@@ -34,10 +32,18 @@ public class ClientHandler {
                             break;
                         }
                         if (message.startsWith("/w ")) {
-                            // TODO homework
+                            String[] substrings = message.split(" ", 3);
+                            if (substrings.length == 3) {
+                                String receiverUsername = substrings[1];
+                                String msg = substrings[2];
+                                server.sendPrivateMessage(this, receiverUsername, msg);
+                            } else {
+                                sendMessage("Invalid private message format. Use '/w username message'");
+                            }
                         }
+                    } else {
+                        server.broadcastMessage(username + ": " + message);
                     }
-                    server.broadcastMessage(username + ": " + message);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
